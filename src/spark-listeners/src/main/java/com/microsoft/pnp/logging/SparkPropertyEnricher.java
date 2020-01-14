@@ -1,14 +1,12 @@
 package com.microsoft.pnp.logging;
 
+import com.databricks.spark.utils.DatabricksUtils;
 import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LoggingEvent;
-import org.apache.spark.SparkConf;
-import org.apache.spark.SparkEnv;
 import org.apache.spark.SparkInformation;
+import scala.collection.JavaConverters;
 
 import java.util.Map;
-
-import scala.collection.JavaConverters;
 
 public class SparkPropertyEnricher extends Filter {
 
@@ -24,6 +22,12 @@ public class SparkPropertyEnricher extends Filter {
                 .mapAsJavaMapConverter(SparkInformation.get()).asJava();
         for (Map.Entry<String, String> entry : javaMap.entrySet()) {
             loggingEvent.setProperty(entry.getKey(), entry.getValue());
+        }
+
+        try {
+            loggingEvent.setProperty("executed_on_databricks_by", DatabricksUtils.getUserName().userName());
+        } catch (RuntimeException ex) {
+            loggingEvent.setProperty("executed_on_databricks_by", "NULL");
         }
 
         return Filter.NEUTRAL;
